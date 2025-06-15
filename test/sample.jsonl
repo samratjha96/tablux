@@ -1,0 +1,5 @@
+{"id": 1, "name": "John Doe", "email": "john@example.com", "active": true, "roles": ["admin", "user"]}
+{"id": 2, "name": "Jane Smith", "email": "jane@example.com", "active": false, "roles": ["user"]}
+{"id": 3, "name": "Bob Johnson", "email": "bob@example.com", "active": true, "roles": ["user", "editor"]}
+{"id": 4, "name": "Alice Brown", "email": "alice@example.com", "active": true, "roles": ["admin"]}
+{"id": 5, "name": "Tom Wilson", "email": "tom@example.com", "active": false, "roles": ["user"]}

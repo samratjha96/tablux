@@ -1,0 +1,11 @@
+id,name,email,active,department
+1,John Doe,john@example.com,true,Engineering
+2,Jane Smith,jane@example.com,false,Marketing
+3,Bob Johnson,bob@example.com,true,Design
+4,Alice Brown,alice@example.com,true,Engineering
+5,Tom Wilson,tom@example.com,false,Sales
+6,Sarah Lee,sarah@example.com,true,Engineering
+7,Mike Chen,mike@example.com,true,Marketing
+8,Lisa Garcia,lisa@example.com,false,Design
+9,Dave Kim,dave@example.com,true,Engineering
+10,Amy Wong,amy@example.com,true,Sales
