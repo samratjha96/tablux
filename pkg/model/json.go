@@ -154,7 +154,7 @@ func InterfaceToString(v interface{}) string {
 	if v == nil {
 		return "null"
 	}
-	
+
 	switch val := v.(type) {
 	case string:
 		return val

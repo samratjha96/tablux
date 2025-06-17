@@ -10,6 +10,7 @@ import (
 // FileFormat represents supported file formats
 type FileFormat int
 
+// File format constants
 const (
 	// FormatUnknown is the default format when detection fails
 	FormatUnknown FileFormat = iota
@@ -19,6 +20,14 @@ const (
 	FormatJSONL
 	// FormatCSV represents CSV format
 	FormatCSV
+)
+
+// File format string representations for consistent usage
+const (
+	TypeJSON    = "json"
+	TypeJSONL   = "jsonl"
+	TypeCSV     = "csv"
+	TypeUnknown = "unknown"
 )
 
 // String returns the string representation of the file format
@@ -32,6 +41,20 @@ func (f FileFormat) String() string {
 		return "CSV"
 	default:
 		return "Unknown"
+	}
+}
+
+// ToTypeString returns the lowercase type string representation needed by the UI
+func (f FileFormat) ToTypeString() string {
+	switch f {
+	case FormatJSON:
+		return TypeJSON
+	case FormatJSONL:
+		return TypeJSONL
+	case FormatCSV:
+		return TypeCSV
+	default:
+		return TypeUnknown
 	}
 }
 
@@ -51,6 +74,82 @@ func DetectFormat(data []byte, extension string) FileFormat {
 	return detectByContent(data)
 }
 
+// DetectFileType returns a string representation of the file type
+// This is a helper function used by the UI to determine which viewer to use
+func DetectFileType(data []byte) string {
+	return detectByContent(data).ToTypeString()
+}
+
+// detectJSONFormat attempts to detect JSON format from data
+func detectJSONFormat(data []byte) (FileFormat, bool) {
+	// Check if it looks like standard JSON (starts with { or [)
+	if len(data) > 0 && (data[0] == '{' || data[0] == '[') {
+		var js interface{}
+		if json.Unmarshal(data, &js) == nil {
+			return FormatJSON, true
+		}
+	}
+	return FormatUnknown, false
+}
+
+// detectJSONLFormat attempts to detect JSONL format from data
+func detectJSONLFormat(lines [][]byte) (FileFormat, bool) {
+	if len(lines) <= 1 {
+		return FormatUnknown, false
+	}
+
+	// Check a sample of lines (up to 10)
+	sampleSize := min(10, len(lines))
+	jsonlCount := 0
+
+	for _, line := range lines[:sampleSize] {
+		line = bytes.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+
+		if line[0] == '{' {
+			var js interface{}
+			if json.Unmarshal(line, &js) == nil {
+				jsonlCount++
+			}
+		}
+	}
+
+	// If most (>50%) of the tested lines are valid JSON objects, assume JSONL
+	if jsonlCount > 0 && jsonlCount >= sampleSize/2 {
+		return FormatJSONL, true
+	}
+
+	return FormatUnknown, false
+}
+
+// detectCSVFormat attempts to detect CSV format from data
+func detectCSVFormat(data []byte) (FileFormat, bool) {
+	r := csv.NewReader(bytes.NewReader(data))
+	r.FieldsPerRecord = -1 // Allow variable number of fields
+	records, err := r.ReadAll()
+
+	if err != nil || len(records) <= 1 {
+		return FormatUnknown, false
+	}
+
+	// Count valid rows (rows with at least 2 fields)
+	validRows := 0
+	for _, record := range records {
+		if len(record) >= 2 {
+			validRows++
+		}
+	}
+
+	// If most (>50%) rows are valid, assume it's a CSV
+	if validRows > len(records)/2 {
+		return FormatCSV, true
+	}
+
+	return FormatUnknown, false
+}
+
 // detectByContent analyzes the file content to determine its format
 func detectByContent(data []byte) FileFormat {
 	// Trim whitespace
@@ -59,56 +158,22 @@ func detectByContent(data []byte) FileFormat {
 		return FormatUnknown
 	}
 
-	// Check if it looks like JSON (starts with { or [)
-	if trimmed[0] == '{' || trimmed[0] == '[' {
-		var js interface{}
-		if json.Unmarshal(trimmed, &js) == nil {
-			return FormatJSON
-		}
+	// Try to detect JSON first (fastest check)
+	if format, ok := detectJSONFormat(trimmed); ok {
+		return format
 	}
 
-	// Check if it looks like JSONL (multiple lines, each a valid JSON object)
+	// Split into lines for JSONL detection
 	lines := bytes.Split(trimmed, []byte("\n"))
-	if len(lines) > 1 {
-		jsonlCount := 0
-		for _, line := range lines[:min(10, len(lines))] {
-			line = bytes.TrimSpace(line)
-			if len(line) == 0 {
-				continue
-			}
-			if line[0] == '{' {
-				var js interface{}
-				if json.Unmarshal(line, &js) == nil {
-					jsonlCount++
-				}
-			}
-		}
-		// If most (>50%) of the tested lines are valid JSON objects, assume JSONL
-		if jsonlCount > len(lines)/2 {
-			return FormatJSONL
-		}
+
+	// Try to detect JSONL
+	if format, ok := detectJSONLFormat(lines); ok {
+		return format
 	}
 
-	// Check if it looks like CSV
-	r := csv.NewReader(bytes.NewReader(trimmed))
-	r.FieldsPerRecord = -1 // Allow variable number of fields
-	records, err := r.ReadAll()
-	if err == nil && len(records) > 0 {
-		// CSV detection is a bit tricky, but let's assume it's CSV if:
-		// 1. We can parse it as CSV
-		// 2. There are multiple rows
-		// 3. All rows have at least 2 fields
-		if len(records) > 1 {
-			validRows := 0
-			for _, record := range records {
-				if len(record) >= 2 {
-					validRows++
-				}
-			}
-			if validRows > len(records)/2 {
-				return FormatCSV
-			}
-		}
+	// Try to detect CSV last (can be expensive for large files)
+	if format, ok := detectCSVFormat(trimmed); ok {
+		return format
 	}
 
 	return FormatUnknown

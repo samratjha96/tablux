@@ -4,51 +4,43 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
 	"tablux/pkg/model"
 )
 
 var (
-	// JSON node colors
-	keyStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("#88AAFF"))
-	stringStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("#7CFC00"))
-	numberStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFD700"))
-	boolStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF9F5F"))
-	nullStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF5F5F"))
-	bracketStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#F8F8F2"))
-	selectedStyle = lipgloss.NewStyle().Background(lipgloss.Color("#404040"))
-	separatorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#AAAAAA"))
-	
-	// Tree symbols
-	treeStyles = map[string]string{
-		"pipe":     "│ ",
-		"tee":      "├─",
-		"last":     "└─",
-		"expanded": "▼ ",
-		"collapsed": "► ",
-		"empty":    "  ",
-	}
-	
+	// JSON node colors from theme
+	keyStyle           = KeyStyle
+	stringStyle        = StringStyle
+	numberStyle        = NumberStyle
+	boolStyle          = BoolStyle
+	nullStyle          = NullStyle
+	bracketStyle       = BracketStyle
+	selectedStyle      = SelectedNodeStyle
+	jsonSeparatorStyle = SeparatorStyle
+
+	// Tree symbols from theme
+	treeStyles = TreeSymbols
+
 	// Spacing between columns for readability
 	valuePadding = 2
 )
 
 // JSONViewer displays a JSON tree
 type JSONViewer struct {
-	root         *model.JSONNode
-	cursor       int
-	nodes        []*model.JSONNode // Flattened list for navigation
-	visibleNodes []*model.JSONNode // Current visible nodes
-	viewportY    int
+	root           *model.JSONNode
+	cursor         int
+	nodes          []*model.JSONNode // Flattened list for navigation
+	visibleNodes   []*model.JSONNode // Current visible nodes
+	viewportY      int
 	viewportHeight int
-	maxKeyWidth   int              // For alignment
+	maxKeyWidth    int // For alignment
 }
 
 // NewJSONViewer creates a new JSON viewer
 func NewJSONViewer(root *model.JSONNode) *JSONViewer {
 	viewer := &JSONViewer{
-		root:         root,
-		cursor:       0,
+		root:           root,
+		cursor:         0,
 		viewportHeight: 20, // Default height
 	}
 	viewer.buildNodeList()
@@ -66,11 +58,11 @@ func (v *JSONViewer) buildNodeList() {
 // flattenNode adds a node and its visible children to the nodes list
 func (v *JSONViewer) flattenNode(node *model.JSONNode, depth int) {
 	v.nodes = append(v.nodes, node)
-	
+
 	if !node.Expanded {
 		return
 	}
-	
+
 	for _, child := range node.Children {
 		v.flattenNode(child, depth+1)
 	}
@@ -79,12 +71,12 @@ func (v *JSONViewer) flattenNode(node *model.JSONNode, depth int) {
 // updateVisibleNodes updates the list of visible nodes
 func (v *JSONViewer) updateVisibleNodes() {
 	v.visibleNodes = make([]*model.JSONNode, 0)
-	
+
 	for _, node := range v.nodes {
 		// Check if node should be visible
 		parent := node.Parent
 		isVisible := true
-		
+
 		for parent != nil {
 			if !parent.Expanded {
 				isVisible = false
@@ -92,12 +84,12 @@ func (v *JSONViewer) updateVisibleNodes() {
 			}
 			parent = parent.Parent
 		}
-		
+
 		if isVisible {
 			v.visibleNodes = append(v.visibleNodes, node)
 		}
 	}
-	
+
 	// Make sure cursor is still valid
 	if v.cursor >= len(v.visibleNodes) && len(v.visibleNodes) > 0 {
 		v.cursor = len(v.visibleNodes) - 1
@@ -197,7 +189,7 @@ func (v *JSONViewer) Render() string {
 func (v *JSONViewer) renderNode(node *model.JSONNode, selected bool) string {
 	indent := v.getIndentation(node)
 	nodeText := v.formatNode(node)
-	
+
 	line := indent + nodeText
 	if selected {
 		return selectedStyle.Render(line)
@@ -208,7 +200,7 @@ func (v *JSONViewer) renderNode(node *model.JSONNode, selected bool) string {
 // getIndentation returns the tree indentation for a node
 func (v *JSONViewer) getIndentation(node *model.JSONNode) string {
 	var result strings.Builder
-	
+
 	// Calculate ancestry for tree drawing
 	var ancestry []*model.JSONNode
 	current := node
@@ -216,12 +208,12 @@ func (v *JSONViewer) getIndentation(node *model.JSONNode) string {
 		ancestry = append([]*model.JSONNode{current.Parent}, ancestry...)
 		current = current.Parent
 	}
-	
+
 	// Draw tree branches
 	for i := 1; i < len(ancestry); i++ {
 		parent := ancestry[i]
 		isLast := false
-		
+
 		if i == len(ancestry)-1 {
 			// Check if this is the last child of its parent
 			children := parent.Children
@@ -231,14 +223,14 @@ func (v *JSONViewer) getIndentation(node *model.JSONNode) string {
 				}
 			}
 		}
-		
+
 		if isLast {
 			result.WriteString(treeStyles["empty"])
 		} else {
 			result.WriteString(treeStyles["pipe"])
 		}
 	}
-	
+
 	// Add expand/collapse symbol if needed
 	if node.HasChildren() {
 		if node.Expanded {
@@ -249,7 +241,7 @@ func (v *JSONViewer) getIndentation(node *model.JSONNode) string {
 	} else {
 		result.WriteString("  ")
 	}
-	
+
 	return result.String()
 }
 
@@ -261,15 +253,15 @@ func (v *JSONViewer) formatNode(node *model.JSONNode) string {
 	} else if key == "root" {
 		key = ""
 	}
-	
+
 	keyFormatted := keyStyle.Render(key)
-	
+
 	// Add colon and padding for better readability
 	separator := ""
 	if key != "" {
-		separator = separatorStyle.Render(": " + strings.Repeat(" ", valuePadding))
+		separator = jsonSeparatorStyle.Render(": " + strings.Repeat(" ", valuePadding))
 	}
-	
+
 	switch node.Type {
 	case model.NodeObject:
 		if node.Expanded {

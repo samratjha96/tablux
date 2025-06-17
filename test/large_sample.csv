@@ -1,0 +1,51 @@
+id,name,email,active,department,position,salary,hire_date,years_experience,location
+1,John Doe,john@example.com,true,Engineering,Senior Developer,120000,2019-05-15,8,New York
+2,Jane Smith,jane@example.com,false,Marketing,Marketing Manager,95000,2018-03-20,5,Chicago
+3,Bob Johnson,bob@example.com,true,Design,Lead Designer,110000,2020-01-10,7,San Francisco
+4,Alice Brown,alice@example.com,true,Engineering,Software Engineer,90000,2021-08-01,3,Boston
+5,Tom Wilson,tom@example.com,false,Sales,Sales Representative,85000,2019-12-05,4,Los Angeles
+6,Sarah Lee,sarah@example.com,true,Engineering,DevOps Engineer,115000,2018-06-25,6,Seattle
+7,Mike Chen,mike@example.com,true,Marketing,Content Strategist,80000,2020-11-15,4,Portland
+8,Lisa Garcia,lisa@example.com,false,Design,UI Designer,95000,2017-09-12,8,Austin
+9,Dave Kim,dave@example.com,true,Engineering,Backend Developer,105000,2021-02-28,5,Denver
+10,Amy Wong,amy@example.com,true,Sales,Sales Director,135000,2016-07-30,9,Miami
+11,Chris Taylor,chris@example.com,true,Engineering,Frontend Developer,98000,2019-08-20,4,Washington DC
+12,Maria Rodriguez,maria@example.com,true,Marketing,SEO Specialist,87000,2020-03-14,6,Atlanta
+13,Ryan White,ryan@example.com,false,Product,Product Manager,125000,2017-11-08,7,San Diego
+14,Emma Wilson,emma@example.com,true,Engineering,QA Engineer,92000,2021-01-15,3,Philadelphia
+15,Jason Lee,jason@example.com,true,Finance,Financial Analyst,105000,2018-02-22,5,Chicago
+16,Olivia Martinez,olivia@example.com,true,HR,HR Manager,98000,2019-04-18,6,New York
+17,Daniel Johnson,daniel@example.com,false,Engineering,Systems Administrator,94000,2020-05-03,5,Seattle
+18,Sophia Brown,sophia@example.com,true,Marketing,Marketing Analyst,83000,2021-07-19,2,Boston
+19,Ethan Davis,ethan@example.com,true,Product,Product Designer,108000,2018-08-30,7,San Francisco
+20,Isabella Clark,isabella@example.com,false,Sales,Account Manager,92000,2019-10-05,4,Los Angeles
+21,Aiden Wilson,aiden@example.com,true,Engineering,Data Engineer,112000,2017-03-12,8,Austin
+22,Mia Taylor,mia@example.com,true,Design,Senior Designer,118000,2018-11-09,9,Portland
+23,Lucas Martin,lucas@example.com,false,Finance,Accountant,89000,2020-06-24,4,Chicago
+24,Abigail White,abigail@example.com,true,Marketing,Digital Marketing Manager,97000,2019-02-14,6,Miami
+25,Alexander Thompson,alex@example.com,true,Engineering,Machine Learning Engineer,130000,2018-05-17,7,New York
+26,Emily Harris,emily@example.com,true,HR,Recruiter,85000,2020-09-08,3,Seattle
+27,Jacob Martinez,jacob@example.com,false,Sales,Business Development,95000,2021-03-22,4,Denver
+28,Madison Taylor,madison@example.com,true,Design,Graphic Designer,88000,2019-07-11,5,Austin
+29,William Johnson,william@example.com,true,Engineering,Security Engineer,115000,2017-12-03,8,Washington DC
+30,Ava Smith,ava@example.com,true,Product,Associate Product Manager,93000,2020-08-19,3,San Francisco
+31,James Wilson,james@example.com,false,Finance,Financial Manager,125000,2016-11-25,10,Chicago
+32,Charlotte Brown,charlotte@example.com,true,Marketing,PR Specialist,89000,2019-01-07,4,Boston
+33,Benjamin Davis,benjamin@example.com,true,Engineering,Full Stack Developer,107000,2018-10-14,6,Seattle
+34,Amelia Garcia,amelia@example.com,false,HR,Benefits Coordinator,82000,2021-05-09,3,Atlanta
+35,Henry Martinez,henry@example.com,true,Sales,Sales Operations Manager,98000,2019-03-28,5,Los Angeles
+36,Evelyn Wilson,evelyn@example.com,true,Engineering,Mobile Developer,104000,2020-02-12,4,San Diego
+37,Michael Thompson,michael@example.com,false,Design,UX Researcher,96000,2018-07-05,6,Portland
+38,Elizabeth Johnson,elizabeth@example.com,true,Marketing,Social Media Manager,88000,2019-11-17,5,New York
+39,Daniel Lee,daniel@example.com,true,Engineering,SRE,118000,2017-08-23,9,Seattle
+40,Victoria Clark,victoria@example.com,false,Finance,Financial Analyst,91000,2020-12-01,3,Chicago
+41,Christopher Smith,christopher@example.com,true,HR,HR Business Partner,95000,2018-04-10,7,Boston
+42,Scarlett Davis,scarlett@example.com,true,Engineering,Database Administrator,108000,2019-06-19,6,San Francisco
+43,Matthew Wilson,matthew@example.com,false,Marketing,Marketing Operations,87000,2021-04-05,2,Miami
+44,Zoe Martin,zoe@example.com,true,Product,Technical Product Manager,116000,2018-09-25,7,Austin
+45,Andrew Johnson,andrew@example.com,true,Sales,Enterprise Account Manager,103000,2017-07-13,8,Los Angeles
+46,Hannah Thompson,hannah@example.com,false,Design,Interaction Designer,94000,2020-10-08,5,New York
+47,Jack Taylor,jack@example.com,true,Engineering,Infrastructure Engineer,110000,2019-09-17,6,Seattle
+48,Lily Brown,lily@example.com,true,Marketing,Growth Manager,98000,2018-01-22,5,Chicago
+49,Owen Wilson,owen@example.com,false,Finance,Finance Analyst,89000,2021-06-10,3,Washington DC
+50,Ella Martinez,ella@example.com,true,Engineering,AI Engineer,120000,2017-10-28,7,San Francisco

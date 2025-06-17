@@ -35,7 +35,7 @@ func (p *JSONParser) Parse(data []byte) (*model.JSONNode, error) {
 // ParseJSONL parses JSONL data (one JSON object per line)
 func (p *JSONParser) ParseJSONL(data []byte) ([]*model.JSONNode, error) {
 	var nodes []*model.JSONNode
-	
+
 	// Split by lines and parse each line separately
 	lines := splitLines(data)
 	for i, line := range lines {
