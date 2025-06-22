@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -13,28 +14,31 @@ import (
 
 // UI constants
 const (
-	AppName = "TABLUX"
+	AppName  = "TABLUX"
 	AppTitle = " TABLUX "
-	
+
 	// File type constants
-	TypeJSON = "json"
+	TypeJSON  = "json"
 	TypeJSONL = "jsonl"
-	TypeCSV = "csv"
-	
+	TypeCSV   = "csv"
+
 	// Viewport padding
-	HeaderFooterSpace = 4  // Space needed for header and footer
-	CSVBorderSpace    = 6  // Extra space needed for CSV borders and padding
-	
+	HeaderFooterSpace = 4 // Space needed for header and footer
+	CSVBorderSpace    = 6 // Extra space needed for CSV borders and padding
+
 	// Default sizes for non-interactive mode
 	DefaultHeight = 30
 	DefaultWidth  = 100
+
+	// Input methods
+	InputStdin = "<stdin>"
 )
 
 // Colors
 var (
-	PrimaryColor   = lipgloss.Color("#7D56F4")
-	TextColor      = lipgloss.Color("#FAFAFA")
-	ErrorColor     = lipgloss.Color("#FF5555")
+	PrimaryColor = lipgloss.Color("#7D56F4")
+	TextColor    = lipgloss.Color("#FAFAFA")
+	ErrorColor   = lipgloss.Color("#FF5555")
 )
 
 // Define styles
@@ -69,7 +73,7 @@ type Model struct {
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(
 		tea.EnterAltScreen,
-		loadFileCmd(m.filePath),
+		loadSourceCmd(m.filePath),
 	)
 }
 
@@ -81,9 +85,16 @@ type FileLoadedMsg struct {
 	error      error
 }
 
-// parseFile parses a file and returns appropriate viewer based on file type
-func parseFile(data []byte) (string, *ui.JSONViewer, *ui.CSVViewer, error) {
-	fileType := parser.DetectFileType(data)
+// parseFile parses data and returns appropriate viewer based on file type
+// If a specific format is provided, it will use that instead of auto-detection
+func parseFile(data []byte, forcedFormat string) (string, *ui.JSONViewer, *ui.CSVViewer, error) {
+	fileType := forcedFormat
+
+	// Auto-detect format if not forced
+	if fileType == "" {
+		fileType = parser.DetectFileType(data)
+	}
+
 	switch fileType {
 	case TypeJSON, TypeJSONL:
 		// Parse JSON data
@@ -92,7 +103,7 @@ func parseFile(data []byte) (string, *ui.JSONViewer, *ui.CSVViewer, error) {
 		if err != nil {
 			return "", nil, nil, err
 		}
-		
+
 		// Create JSON viewer
 		viewer := ui.NewJSONViewer(root)
 		return fileType, viewer, nil, nil
@@ -104,7 +115,7 @@ func parseFile(data []byte) (string, *ui.JSONViewer, *ui.CSVViewer, error) {
 		if err != nil {
 			return "", nil, nil, err
 		}
-		
+
 		// Create CSV viewer
 		viewer := ui.NewCSVViewer(csvData)
 		return fileType, nil, viewer, nil
@@ -114,21 +125,29 @@ func parseFile(data []byte) (string, *ui.JSONViewer, *ui.CSVViewer, error) {
 	}
 }
 
-// loadFileCmd loads a file and returns the appropriate viewer
-func loadFileCmd(path string) tea.Cmd {
+// loadSourceCmd loads data from a file or stdin and returns the appropriate viewer
+func loadSourceCmd(source string) tea.Cmd {
 	return func() tea.Msg {
-		// Load file data
-		data, err := os.ReadFile(path)
+		// Get the format flag value
+		formatFlag := ""
+		flag.Visit(func(f *flag.Flag) {
+			if f.Name == "format" {
+				formatFlag = f.Value.String()
+			}
+		})
+
+		// Load data from source
+		data, err := readDataFromSource(source)
 		if err != nil {
 			return FileLoadedMsg{error: err}
 		}
 
-		// Parse file data
-		fileType, jsonViewer, csvViewer, err := parseFile(data)
+		// Parse data with optional format
+		fileType, jsonViewer, csvViewer, err := parseFile(data, formatFlag)
 		if err != nil {
 			return FileLoadedMsg{error: err}
 		}
-		
+
 		return FileLoadedMsg{
 			viewerType: fileType,
 			jsonViewer: jsonViewer,
@@ -142,7 +161,7 @@ func (m *Model) handleJSONKeyMsg(key string) {
 	if m.jsonViewer == nil {
 		return
 	}
-	
+
 	switch key {
 	case "up":
 		m.jsonViewer.MoveUp()
@@ -158,7 +177,7 @@ func (m *Model) handleCSVKeyMsg(key string) {
 	if m.csvViewer == nil {
 		return
 	}
-	
+
 	switch key {
 	case "up":
 		m.csvViewer.MoveUp()
@@ -183,7 +202,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if key == "q" || key == "ctrl+c" {
 			return m, tea.Quit
 		}
-		
+
 		// Handle viewer-specific keys
 		switch m.viewerType {
 		case TypeJSON, TypeJSONL:
@@ -226,15 +245,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // renderError renders an error message
 func renderError(msg string) string {
-	return fmt.Sprintf("%s\n\n%s", 
-		titleStyle.Render(AppTitle), 
+	return fmt.Sprintf("%s\n\n%s",
+		titleStyle.Render(AppTitle),
 		lipgloss.NewStyle().Foreground(ErrorColor).Render(msg))
 }
 
 // renderLoading renders a loading message
 func renderLoading(path string) string {
-	return fmt.Sprintf("%s\n\nLoading %s...", 
-		titleStyle.Render(AppTitle), 
+	return fmt.Sprintf("%s\n\nLoading %s...",
+		titleStyle.Render(AppTitle),
 		path)
 }
 
@@ -254,16 +273,16 @@ func (m Model) View() string {
 	if m.errorMsg != "" {
 		return renderError(m.errorMsg)
 	}
-	
+
 	if m.isLoading {
 		return renderLoading(m.filePath)
 	}
-	
+
 	// Create header with title and file info
 	header := lipgloss.JoinHorizontal(lipgloss.Top,
 		titleStyle.Render(AppTitle),
 		lipgloss.NewStyle().PaddingLeft(2).Render(fmt.Sprintf("File: %s | Type: %s", m.filePath, m.viewerType)))
-	
+
 	// Create content based on viewer type
 	var content string
 	switch m.viewerType {
@@ -278,10 +297,10 @@ func (m Model) View() string {
 	default:
 		content = "No content to display"
 	}
-	
+
 	// Get controls for current viewer
 	controls := getControlsForViewer(m.viewerType)
-	
+
 	// Combine all elements
 	return fmt.Sprintf("%s\n\n%s\n\n%s", header, content, controls)
 }
@@ -305,7 +324,7 @@ func testCSVViewer() {
 
 	// Create CSV viewer
 	viewer := ui.NewCSVViewer(csvData)
-	viewer.SetViewport(DefaultWidth - HeaderFooterSpace, DefaultHeight - CSVBorderSpace)
+	viewer.SetViewport(DefaultWidth-HeaderFooterSpace, DefaultHeight-CSVBorderSpace)
 
 	// Render and output result
 	result := viewer.Render()
@@ -319,37 +338,86 @@ func testCSVViewer() {
 	}
 }
 
-// runNonInteractiveMode shows file content without TUI
-func runNonInteractiveMode(filePath string) {
-	data, err := os.ReadFile(filePath)
+// readDataFromSource reads data from either a file or stdin
+func readDataFromSource(source string) ([]byte, error) {
+	// Read from stdin if specified
+	if source == InputStdin {
+		return io.ReadAll(os.Stdin)
+	}
+
+	// Otherwise read from file
+	return os.ReadFile(source)
+}
+
+// runNonInteractiveMode shows content without TUI
+func runNonInteractiveMode(source string) {
+	// Get the format flag value
+	formatFlag := ""
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == "format" {
+			formatFlag = f.Value.String()
+		}
+	})
+
+	data, err := readDataFromSource(source)
 	if err != nil {
-		fmt.Printf("Error reading file: %v\n", err)
+		fmt.Printf("Error reading input: %v\n", err)
 		os.Exit(1)
 	}
-	
-	fileType, jsonViewer, csvViewer, err := parseFile(data)
+
+	fileType, jsonViewer, csvViewer, err := parseFile(data, formatFlag)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
 	}
-	
+
 	switch fileType {
 	case TypeJSON, TypeJSONL:
 		jsonViewer.SetViewportHeight(DefaultHeight - HeaderFooterSpace)
 		fmt.Println(jsonViewer.Render())
-		
+
 	case TypeCSV:
-		csvViewer.SetViewport(DefaultWidth - HeaderFooterSpace, DefaultHeight - CSVBorderSpace)
+		csvViewer.SetViewport(DefaultWidth-HeaderFooterSpace, DefaultHeight-CSVBorderSpace)
 		fmt.Println(csvViewer.Render())
 	}
 }
 
+// printHelp prints usage information
+func printHelp() {
+	fmt.Printf("Usage: %s [OPTIONS]\n\n", os.Args[0])
+	fmt.Println("A TUI file/text visualizer for JSON, CSV, and other formats.")
+	fmt.Println("\nOptions:")
+	flag.PrintDefaults()
+	fmt.Println("\nExamples:")
+	fmt.Println("  # View a file interactively")
+	fmt.Println("  tablux --file data.json")
+	fmt.Println("\n  # Process stdin input")
+	fmt.Println("  cat data.csv | tablux")
+	fmt.Println("\n  # Force specific format")
+	fmt.Println("  cat data.txt | tablux --format json")
+	fmt.Println("\n  # Output to stdout (non-interactive)")
+	fmt.Println("  tablux --file data.json --no-interactive")
+	fmt.Println("\nKeyboard controls:")
+	fmt.Println("  q, Ctrl+C: Quit")
+	fmt.Println("  ↑/↓: Navigate")
+	fmt.Println("  Space/Enter: Toggle expand/collapse (JSON) or column visibility (CSV)")
+	fmt.Println("  s: Sort column (CSV only)")
+}
+
 func main() {
 	// Parse command-line flags
-	filePath := flag.String("file", "", "Path to the file to open")
+	filePath := flag.String("file", "", "Path to the file to open (omit to use stdin)")
 	noInteractive := flag.Bool("no-interactive", false, "Run in non-interactive mode")
 	testCSV := flag.Bool("test-csv", false, "Run CSV viewer test")
+	format := flag.String("format", "", "Force a specific format: json, jsonl, or csv")
+	help := flag.Bool("help", false, "Show usage information")
 	flag.Parse()
+
+	// Show help if requested
+	if *help {
+		printHelp()
+		return
+	}
 
 	// Handle CSV test mode
 	if *testCSV {
@@ -357,21 +425,36 @@ func main() {
 		return
 	}
 
-	if *filePath == "" {
-		fmt.Println("Please provide a file path using --file flag")
+	// Validate format if provided
+	if *format != "" && *format != TypeJSON && *format != TypeJSONL && *format != TypeCSV {
+		fmt.Printf("Invalid format: %s. Use json, jsonl, or csv.\n", *format)
+		os.Exit(1)
+	}
+
+	// Determine input source
+	source := *filePath
+
+	// Check if we should use stdin
+	stat, _ := os.Stdin.Stat()
+	if (stat.Mode() & os.ModeCharDevice) == 0 {
+		// Data is being piped to stdin
+		source = InputStdin
+	} else if source == "" {
+		// No input source provided
+		fmt.Println("No input provided. Use --file flag or pipe data to stdin.")
 		os.Exit(1)
 	}
 
 	// Run in non-interactive mode if requested
 	if *noInteractive {
-		runNonInteractiveMode(*filePath)
+		runNonInteractiveMode(source)
 		return
 	}
 
 	// Create initial model
 	m := Model{
 		title:     AppName,
-		filePath:  *filePath,
+		filePath:  source,
 		isLoading: true,
 	}
 
