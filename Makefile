@@ -61,7 +61,7 @@ test:
 # Run the application
 .PHONY: run
 run: build
-	./$(BINARY_NAME)
+	./$(BINARY_NAME) $(FILE)
 
 # Clean build artifacts
 .PHONY: clean
@@ -74,16 +74,32 @@ clean:
 install: build
 	$(GO) install
 
+# Examples with stdin and format flags
+.PHONY: run-csv-stdin
+run-csv-stdin: build
+	cat test/sample.csv | ./$(BINARY_NAME) --no-interactive
+
+.PHONY: run-json-stdin
+run-json-stdin: build
+	cat test/sample.json | ./$(BINARY_NAME) --no-interactive
+
 # Help command
 .PHONY: help
 help:
 	@echo "Tablux Makefile Usage:"
-	@echo "  make build       - Build the tablux binary"
-	@echo "  make run         - Build and run the application"
-	@echo "  make format      - Format the Go code"
-	@echo "  make test        - Run the tests"
-	@echo "  make clean       - Remove build artifacts"
-	@echo "  make release     - Build optimized binary for release"
-	@echo "  make install     - Install tablux to GOPATH/bin"
-	@echo "  make build-all   - Build binaries for multiple platforms"
-	@echo "  make help        - Show this help message"
+	@echo "  make build          - Build the tablux binary"
+	@echo "  make run FILE=path  - Build and run the application (optional FILE parameter)"
+	@echo "  make run-csv-stdin  - Run with CSV from stdin as example"
+	@echo "  make run-json-stdin - Run with JSON from stdin as example"
+	@echo "  make format         - Format the Go code"
+	@echo "  make test           - Run the tests"
+	@echo "  make clean          - Remove build artifacts"
+	@echo "  make release        - Build optimized binary for release"
+	@echo "  make install        - Install tablux to GOPATH/bin"
+	@echo "  make build-all      - Build binaries for multiple platforms"
+	@echo "  make help           - Show this help message"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make run FILE=test/sample.json           - Run with specific file"
+	@echo "  make run FILE=\"--format csv test/sample.txt\" - Force CSV format"
+	@echo "  cat test/sample.json | ./tablux          - Pipe data to stdin"

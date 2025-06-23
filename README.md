@@ -36,9 +36,9 @@ go install github.com/yourusername/tablux/cmd/tablux@latest
 
 ```bash
 # Interactive mode (default)
-tablux --file path/to/file.json
-tablux --file path/to/file.jsonl
-tablux --file path/to/file.csv
+tablux path/to/file.json
+tablux path/to/file.jsonl
+tablux path/to/file.csv
 
 # Using stdin (pipe data in)
 cat path/to/file.json | tablux
@@ -50,13 +50,13 @@ cat ambiguous-data.txt | tablux --format json
 cat pipe-separated-values.txt | tablux --format csv 
 
 # Non-interactive mode (output rendered content to stdout)
-tablux --file path/to/file.json --no-interactive
+tablux path/to/file.json --no-interactive
 cat path/to/file.csv | tablux --no-interactive
 ```
 
 ### Options
 
-- `--file`: Specify the input file path (optional if using stdin)
+- File path can be provided directly as an argument (optional if using stdin)
 - `--format`: Force a specific format (json, jsonl, or csv)
 - `--no-interactive`: Run in non-interactive mode, output to stdout
 - `--test-csv`: Run CSV viewer test with sample data

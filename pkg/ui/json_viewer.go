@@ -160,6 +160,63 @@ func (v *JSONViewer) SetViewportHeight(height int) {
 	v.ensureCursorVisible()
 }
 
+// RenderWithClosingBrackets renders the JSON with all closing brackets for static display
+func (v *JSONViewer) RenderWithClosingBrackets() string {
+	if len(v.visibleNodes) == 0 {
+		return "Empty JSON"
+	}
+
+	var sb strings.Builder
+
+	// First, render all visible nodes
+	for i := 0; i < len(v.visibleNodes); i++ {
+		node := v.visibleNodes[i]
+		line := v.renderNode(node, i == v.cursor)
+		sb.WriteString(line)
+		sb.WriteString("\n")
+	}
+
+	// Create a map to track nodes at each depth
+	nodesAtDepth := make(map[int][]model.NodeType)
+
+	// Get max depth and track node types at each depth
+	maxDepth := 0
+	for _, node := range v.visibleNodes {
+		depth := 0
+		current := node
+
+		// Count parents to determine depth
+		for current.Parent != nil {
+			depth++
+			current = current.Parent
+		}
+
+		if depth > maxDepth {
+			maxDepth = depth
+		}
+
+		// Store node type at this depth
+		if node.Type == model.NodeObject || node.Type == model.NodeArray {
+			nodesAtDepth[depth] = append(nodesAtDepth[depth], node.Type)
+		}
+	}
+
+	// Add closing brackets for each depth level in reverse order
+	for i := maxDepth; i >= 0; i-- {
+		for _, nodeType := range nodesAtDepth[i] {
+			indent := strings.Repeat("  ", i)
+
+			if nodeType == model.NodeObject {
+				sb.WriteString(indent + bracketStyle.Render("}") + "\n")
+			} else if nodeType == model.NodeArray {
+				sb.WriteString(indent + bracketStyle.Render("]") + "\n")
+			}
+		}
+	}
+
+	return sb.String()
+}
+
 // Render renders the JSON viewer
 func (v *JSONViewer) Render() string {
 	if len(v.visibleNodes) == 0 {

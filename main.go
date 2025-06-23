@@ -442,6 +442,7 @@ func main() {
 	} else if source == "" {
 		// No input source provided
 		fmt.Println("No input provided. Use --file flag or pipe data to stdin.")
+		fmt.Println("Run with --help for usage information.")
 		os.Exit(1)
 	}
 
